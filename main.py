@@ -48,15 +48,16 @@ def user():
             data.append({
                 "id": user.id,
                 "name": user.name,
+                "age": user.age,
                 "location": user.location
             })
         return jsonify({ "data": data })
     elif request.method.upper() == "POST":
         data = request.get_json()
-        if data["name"] == "" or data["location"] == "":
+        if data["name"] == "" or data["location"] == "" or data["age"] == "":
             return jsonify({ "error": "Name and Location cannot be empty" }), 400
         else:
-            new_user = User(name=data["name"], location=data["location"])
+            new_user = User(name=data["name"], location=data["location"], age=data["age"])
             my_session.add(new_user)
             my_session.commit()
             return jsonify({ "message": f"User created successfully{data['name']}" }), 201
