@@ -13,12 +13,12 @@ class Base(DeclarativeBase):
 
 
 #Map users table to User class
-class User(Base):
-    __tablename__ = "users"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    full_name: Mapped[str] = mapped_column(String(100))
-    location: Mapped[str] = mapped_column(String(100))
-    age: Mapped[int] = mapped_column()
+class Employee(Base):
+    __tablename__ ="employees"
+    id: Mapped[int]=mapped_column(primary_key=True)
+    name: Mapped[str]=mapped_column(String(100))
+    location: Mapped[str]=mapped_column(String(100))
+    age: Mapped[int]=mapped_column()
 
 class Authentication(Base):
     __tablename__ = "user_authentication"
