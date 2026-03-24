@@ -97,76 +97,82 @@ def employees():
 
 @app.route("/register", methods=allowed_methods)
 def register():
-    
-    if not request.method == "POST":
-        return jsonify({"message": "Send a POST request to register a user"}), 405
+    try:
+        if not request.method == "POST":
+            return jsonify({"message": "Send a POST request to register a user"}), 405
 
-    else:
-        data = request.get_json() or {}
+        else:
+            data = request.get_json() or {}
 
-        full_name = data.get("full_name")
-        email = data.get("email")
-        password = data.get("password")
+            full_name = data.get("full_name")
+            email = data.get("email")
+            password = data.get("password")
 
-        if not full_name or not email or not password:
-            return jsonify({"error": "Full name, email and password cannot be empty"}), 400
+            if not full_name or not email or not password:
+                return jsonify({"error": "Full name, email and password cannot be empty"}), 400
 
-        existing_employee = my_session.query(Authentication).filter_by(email=email).first()
-        if existing_employee:
-            return jsonify({"error": "Email already registered"}), 409
+            existing_employee = my_session.query(Authentication).filter_by(email=email).first()
+            if existing_employee:
+                return jsonify({"error": "Email already registered"}), 409
 
-        # Hash password
-        hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
+            # Hash password
+            hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
 
-        new_auth = Authentication(
-            email=email,
-            full_name=full_name,
-            hashed_password=hashed_password,
-            created_at=datetime.utcnow()
-        )
+            new_auth = Authentication(
+                email=email,
+                full_name=full_name,
+                hashed_password=hashed_password,
+                created_at=datetime.utcnow()
+            )
 
-        my_session.add(new_auth)
-        my_session.commit()
+            my_session.add(new_auth)
+            my_session.commit()
 
-        token = create_access_token(identity=email)
+            token = create_access_token(identity=email)
 
-        return jsonify({
-            "message": "User created",
-            "token": token
-        }), 201
+            return jsonify({
+                "message": "User created",
+                "token": token
+            }), 201
+            
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/login", methods=allowed_methods)
 def login():
+    try:
+        if not request.method == "POST":
+            return jsonify({ 'Only post requests allowed'}), 405
+            
+        data = request.get_json()
+        email = data.get("email")
+        password = data.get("password")
 
-    if not request.method == "POST":
-        return jsonify({ 'Only post requests allowed'}), 405
-        
-    data = request.get_json()
-    email = data.get("email")
-    password = data.get("password")
+        if not email or not password:
+            return jsonify({"error": "Email and password required"}), 400
 
-    if not email or not password:
-        return jsonify({"error": "Email and password required"}), 400
+        query = select(Authentication).where(Authentication.email == email)
+        auth = my_session.scalars(query).first()
 
-    query = select(Authentication).where(Authentication.email == email)
-    auth = my_session.scalars(query).first()
+        if not auth:
+            return jsonify({"error": "Invalid email or password"}), 401
 
-    if not auth:
-        return jsonify({"error": "Invalid email or password"}), 401
+        if not bcrypt.check_password_hash(auth.hashed_password, password):
+            return jsonify({"error": "Invalid email or password"}), 401
 
-    if not bcrypt.check_password_hash(auth.hashed_password, password):
-        return jsonify({"error": "Invalid email or password"}), 401
+        token = create_access_token(identity=data["email"])
+        return jsonify({
+            "message": "Login successful",
+            "user": {
+                "id": auth.id,
+                "full_name": auth.full_name,
+                "email": auth.email,
+            },
+            "token": f"{token}"
+        }), 200
 
-    token = create_access_token(identity=data["email"])
-    return jsonify({
-        "message": "Login successful",
-        "user": {
-            "id": auth.id,
-            "full_name": auth.full_name,
-            "email": auth.email,
-        },
-        "token": f"{token}"
-    }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 app.run(debug=True)
