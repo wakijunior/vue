@@ -17,14 +17,11 @@ sentry_sdk.init(
     send_default_pii=True,
 )
 
-
 app = Flask(__name__)
 
 app.config["JWT_SECRET_KEY"] = "gfgtrsersrtfyghuioh8d45s765634diou09gferay"
 
 CORS(app)
-
-
 
 jwt = JWTManager(app)
 
@@ -58,7 +55,7 @@ def home():
 
 
 @app.route("/employees", methods=allowed_methods)
-# @jwt_required()
+@jwt_required()
 def employees():
     try:
         method = request.method.lower()
@@ -87,7 +84,7 @@ def employees():
                                         location=data["location"], 
                                         age=data["age"]
                                         )
-                
+
                 my_session.add(new_employee)
                 my_session.commit()
                 my_session.close()
@@ -100,11 +97,15 @@ def employees():
 
 @app.route("/register", methods=allowed_methods)
 def register():
-    data = request.get_json() or {}
+    if register.method == "GET":
+        return jsonify({"message": "Send a POST request to register a user"}), 200
 
-    full_name = data.get("full_name")
-    email = data.get("email")
-    password = data.get("password")
+    if register.method == "POST":
+        data = request.get_json() or {}
+
+        full_name = data.get("full_name")
+        email = data.get("email")
+        password = data.get("password")
 
     if not full_name or not email or not password:
         return jsonify({"error": "Full name, email and password cannot be empty"}), 400
@@ -145,11 +146,10 @@ def login():
 
     query = select(Authentication).where(Authentication.email == email)
     auth = my_session.scalars(query).first()
-    
 
     if not auth:
         return jsonify({"error": "Invalid email or password"}), 401
-    
+
     if not bcrypt.check_password_hash(auth.hashed_password, password):
         return jsonify({"error": "Invalid email or password"}), 401
 
