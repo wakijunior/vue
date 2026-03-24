@@ -97,10 +97,10 @@ def employees():
 
 @app.route("/register", methods=allowed_methods)
 def register():
-    if register.method == "GET":
-        return jsonify({"message": "Send a POST request to register a user"}), 200
+    if not request.method == "POST":
+        return jsonify({"message": "Send a POST request to register a user"}), 405
 
-    if register.method == "POST":
+    else:
         data = request.get_json() or {}
 
         full_name = data.get("full_name")
@@ -136,8 +136,10 @@ def register():
 
 @app.route("/login", methods=allowed_methods)
 def login():
+    if not request.method == "POST":
+        return jsonify({ 'Only post requests allowed'}), 405
+        
     data = request.get_json()
-
     email = data.get("email")
     password = data.get("password")
 
